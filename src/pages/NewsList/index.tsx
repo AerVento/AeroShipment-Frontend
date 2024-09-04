@@ -1,4 +1,4 @@
-import { A } from "@solidjs/router";
+import { A, useSearchParams } from "@solidjs/router";
 import { For } from "solid-js";
 import Header from "~/component/Header";
 import Pagination from "~/component/Pagination";
@@ -7,6 +7,7 @@ import { MockNews } from "~/mock";
 export default () => {
   // TODO
   const news = MockNews;
+  const [searchParams, setSearchParams] = useSearchParams();
   return (
     <>
       <Header />
@@ -32,7 +33,10 @@ export default () => {
           </div>
         </div>
       </div>
-      <Pagination initialPage={1} />
+      <Pagination
+        initialPage={1}
+        onPageChanged={(page) => setSearchParams({ page })}
+      />
     </>
   );
 };

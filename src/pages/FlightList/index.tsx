@@ -1,13 +1,61 @@
-import { useSearchParams } from "@solidjs/router";
-import { For } from "solid-js";
+import { useNavigate, useSearchParams } from "@solidjs/router";
+import { createQuery } from "@tanstack/solid-query";
+import { createSignal, For, Show } from "solid-js";
 import Header from "~/component/Header";
 import Pagination from "~/component/Pagination";
+import { FlightData } from "~/data";
+import { GetFlightDataByPageResponse } from "~/interfaces";
 import { MockFlights } from "~/mock";
+import { useState } from "~/state";
+
+const SendQuery = async (page: string, token: string) => {
+  const resp = await fetch(`/api/flights?page=${page}`, {
+    method: "GET",
+    headers: { "content-type": "application/json", Authorization: token },
+  });
+
+  if (resp.status === 200) {
+    const res = (await resp.json()) as GetFlightDataByPageResponse;
+    if (res.code === 0) return res.data;
+    else {
+      console.error(res.message);
+      return [];
+    }
+  }
+
+  let err;
+  try {
+    err = await resp.json();
+  } catch {
+    throw {
+      retry: true,
+      msg: await resp.text(),
+    };
+  }
+
+  throw {
+    retry: false,
+    msg: err.msg,
+  };
+};
 
 export default () => {
-  //TODO
-  const flights = MockFlights;
+  const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const [page, setPage] = createSignal(+(searchParams.page ?? "1"));
+  const [state, _] = useState();
+  if (state.user === null) {
+    alert("请先登录！");
+    navigate("/auth");
+    return <></>;
+  }
+  const token = state.user.token;
+  const query = createQuery<FlightData[]>(() => ({
+    queryKey: [page()],
+    queryFn: (param) =>
+      SendQuery((param.queryKey[1] as number).toString(), token),
+  }));
+
   return (
     <>
       <Header />
@@ -28,29 +76,45 @@ export default () => {
                   <th class="whitespace-nowrap border p-2">航空公司</th>
                 </tr>
               </thead>
-              <For each={flights}>
-                {(item, _) => (
+              <Show
+                when={query.status !== "pending"}
+                fallback={
                   <tr class="hover:bg-white/40">
-                    <td class="border p-2 text-center">{item.id}</td>
-                    <td class="border p-2 text-center">{item.source}</td>
-                    <td class="border p-2 text-center">
-                      {new Date(item.departure_time * 1000).toLocaleString()}
+                    <td class="border p-2 text-center" colSpan={7}>
+                      加载中
                     </td>
-                    <td class="border p-2 text-center">{item.dest}</td>
-                    <td class="border p-2 text-center">
-                      {new Date(item.arrive_time * 1000).toLocaleString()}
-                    </td>
-                    <td class="border p-2 text-center">{item.airline}</td>
                   </tr>
-                )}
-              </For>
+                }
+              >
+                <For
+                  each={query.status === "success" ? query.data : MockFlights}
+                >
+                  {(item, _) => (
+                    <tr class="hover:bg-white/40">
+                      <td class="border p-2 text-center">{item.id}</td>
+                      <td class="border p-2 text-center">{item.source}</td>
+                      <td class="border p-2 text-center">
+                        {new Date(item.departure_time * 1000).toLocaleString()}
+                      </td>
+                      <td class="border p-2 text-center">{item.dest}</td>
+                      <td class="border p-2 text-center">
+                        {new Date(item.arrive_time * 1000).toLocaleString()}
+                      </td>
+                      <td class="border p-2 text-center">{item.airline}</td>
+                    </tr>
+                  )}
+                </For>
+              </Show>
             </table>
           </div>
         </div>
       </div>
       <Pagination
         initialPage={1}
-        onPageChanged={(page) => setSearchParams({ page })}
+        onPageChanged={(page) => {
+          setPage(page);
+          setSearchParams({ page: page.toString() });
+        }}
       />
     </>
   );

@@ -1,50 +1,64 @@
 import { A, useNavigate } from "@solidjs/router";
 import { createSignal } from "solid-js";
-import { NormalUserRegisterResponse } from "~/interfaces";
-import { MockUserData } from "~/mock";
+import { NormalUserRegisterResponse, UserLoginResponse } from "~/interfaces";
+import { useState } from "~/state";
 
 export default () => {
   const navigate = useNavigate();
+  const [_, setState] = useState();
   const [loginUsername, setLoginUsername] = createSignal("");
   const [loginPassword, setLoginPassword] = createSignal("");
   const [registerUsername, setRegisterUsername] = createSignal("");
   const [registerPassword, setRegisterPassword] = createSignal("");
   const onLogin = async () => {
-    // TODO
-    const result = MockUserData.find(
-      (v) => v.username === loginUsername() && v.password === loginPassword(),
-    );
-    if (result === undefined) {
-      alert("登陆失败！");
-      return;
+    const user = loginUsername().trim();
+    const pass = loginPassword().trim();
+
+    const resp = await fetch("/api/login", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        username: user,
+        password: pass,
+      }),
+    });
+
+    const res: UserLoginResponse = await resp.json();
+
+    if (res.code !== 0) {
+      setState("user", {
+        username: user,
+        token: res.data.token,
+        role: res.data.role,
+      });
+      navigate("/");
+      alert(`登录成功！`);
+    } else {
+      alert(`登陆失败！原因：${res.message}`);
     }
-    alert("登陆成功！");
-    navigate("/");
   };
   const onRegister = async () => {
-    // TODO
+    const user = registerUsername().trim();
+    const pass = registerPassword().trim();
+
     const resp = await fetch("/api/register", {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({
-        username: registerUsername(),
-        password: registerPassword(),
+        username: user,
+        password: pass,
       }),
     });
 
-    if (resp.status !== 200) {
-      const msg = (await resp.json()).msg;
-      alert(msg);
-      return;
+    const res: NormalUserRegisterResponse = await resp.json();
+
+    if (res.code !== 0) {
+      alert(`注册成功！`);
+    } else {
+      alert(`注册失败！原因：${res.message}`);
     }
-    const data: NormalUserRegisterResponse = await resp.json();
-    if (data.code !== 0) {
-      const msg = (await resp.json()).msg;
-      alert(msg);
-      return;
-    }
-    alert("注册成功！");
   };
+
   return (
     <>
       <div class="w-full pt-10 text-center text-5xl font-bold">

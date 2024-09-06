@@ -120,12 +120,12 @@ export interface RemoveNewsDataResponse extends BaseResponse<null> {}
 /**
  * 查看一个用户的货物信息 响应
  */
-export interface GetGoodsDataResponse extends BaseResponse<GoodsData> {}
+export interface GetGoodsDataResponse extends BaseResponse<GoodsData[]> {}
 
 /**
  * 分页获取货物信息 响应
  */
-export interface GetGoodsDataByPage extends BaseResponse<GoodsData[]> {}
+export interface GetGoodsDataByPageResponse extends BaseResponse<GoodsData[]> {}
 
 /**
  * 增加货物/修改货物 响应

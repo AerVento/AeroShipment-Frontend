@@ -1,6 +1,7 @@
 import { A, Navigate, Route } from "@solidjs/router";
 import { JSX, lazy } from "solid-js";
 import Header from "~/component/Header";
+import { useState } from "~/state";
 
 interface TagButtonProps {
   href: string;
@@ -20,6 +21,11 @@ interface UserCenterProps {
   children?: JSX.Element;
 }
 export default (props: UserCenterProps) => {
+  const [state, _] = useState();
+  if (state.user === null) {
+    alert("请先登录！");
+    return <></>;
+  }
   return (
     <>
       <Header />

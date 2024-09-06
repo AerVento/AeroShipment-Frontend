@@ -1,6 +1,6 @@
 import { A } from "@solidjs/router";
 import { JSX, Match, Switch } from "solid-js";
-import { MockUserData } from "~/mock";
+import { useState } from "~/state";
 
 interface TagButtonProps {
   href: string;
@@ -17,10 +17,9 @@ const TagButton = (props: TagButtonProps) => (
 );
 
 export default () => {
-  // TODO: 改成从本地存储中读取用户角色信息
-  let role = MockUserData.find((u) => u.username === "AerVento3")?.role;
-  if (role === undefined) role = "admin";
-
+  const [state, _] = useState();
+  let role = state.user?.role;
+  if (role === undefined) role = "user";
   return (
     <>
       <div class="w-full pb-10 pt-20 text-center text-4xl font-bold">
@@ -38,7 +37,6 @@ export default () => {
           <Match when={role === "op"}>
             <TagButton href="/index">首页</TagButton>
             <TagButton href="/flights">航班信息</TagButton>
-            <TagButton href="/news">新闻信息</TagButton>
             <TagButton href="/news/admin">新闻管理</TagButton>
             <TagButton href="/goods/admin">货物管理</TagButton>
           </Match>
